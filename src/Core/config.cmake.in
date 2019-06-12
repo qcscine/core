@@ -1,0 +1,16 @@
+# Add dependencies for your component
+set(Boost_USE_STATIC_LIBS ON)
+include(CMakeFindDependencyMacro)
+if(NOT TARGET Boost::filesystem OR NOT TARGET Boost::system)
+  unset(Boost_FOUND)
+  find_dependency(Boost REQUIRED COMPONENTS filesystem system)
+endif()
+
+
+set(Core_VERSION 0.1.0)
+
+include(${CMAKE_CURRENT_LIST_DIR}/CoreTargets.cmake)
+
+@PACKAGE_INIT@
+
+check_required_components(Core)

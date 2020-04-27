@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.9)
 # tree must then provide a properly namespaced target with the same name as
 # your project.
 project(Core
-  VERSION 1.0.0
+  VERSION 2.0.0
   DESCRIPTION "Module management and core interface definitions"
 )
 
@@ -14,6 +14,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # Component setup
 include(ComponentSetup)
 scine_setup_component()
+
+# Testing
+if(SCINE_BUILD_TESTS)
+  enable_testing()
+endif()
 
 # Subdirectories
 add_subdirectory(src)

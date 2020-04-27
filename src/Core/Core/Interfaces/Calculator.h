@@ -7,21 +7,20 @@
 #ifndef CORE_CALCULATOR_H_
 #define CORE_CALCULATOR_H_
 /* Internal Includes */
+#include "Core/BaseClasses/ObjectWithStructure.h"
+#include "Core/BaseClasses/StateHandableObject.h"
 #include "Core/ExportControl.h"
 /* External Includes */
-#include <Eigen/Core>
-#include <memory>
 #include <string>
 
 namespace Scine {
 
 namespace Utils {
-class AtomCollection;
 class Results;
 class Settings;
 class StatesHandler;
 class PropertyList;
-using PositionCollection = Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>;
+class AdditiveElectronicContribution;
 } // namespace Utils
 
 namespace Core {
@@ -29,35 +28,14 @@ namespace Core {
  * @class Calculator Calculator.h
  * @brief The interface for all classes running electronic structure calculations.
  */
-class Calculator {
+class Calculator : public StateHandableObject, public ObjectWithStructure {
  public:
   static constexpr const char* interface = "calculator";
 
-  /// @brief Default Constructor.
+  /// @brief Default constructor.
   Calculator() = default;
-  /// @brief Default Destructor.
+  /// @brief Default destructor.
   virtual ~Calculator() = default;
-  /**
-   * @brief Changes the molecular structure to calculate.
-   *
-   * @param structure A new Utils::AtomCollection to save.
-   */
-  virtual void setStructure(const Utils::AtomCollection& structure) = 0;
-  /**
-   * @brief Gets the molecular structure as a const Utils::AtomCollection&.
-   *
-   * @return a const Utils::AtomCollection&.
-   */
-  virtual std::unique_ptr<Utils::AtomCollection> getStructure() const = 0;
-  /**
-   * @brief Allows to modify the positions of the underlying Utils::AtomCollection
-   * @param newPositions the new positions to be assigned to the underlying Utils::AtomCollection
-   */
-  virtual void modifyPositions(Utils::PositionCollection newPositions) = 0;
-  /**
-   * @brief Getter for the coordinates of the underlying Utils::AtomCollection
-   */
-  virtual const Utils::PositionCollection& getPositions() const = 0;
   /**
    * @brief Sets the properties to calculate.
    * @param requiredProperties A Utils::PropertyList, a sequence of bits that represent the
@@ -65,13 +43,17 @@ class Calculator {
    */
   virtual void setRequiredProperties(const Utils::PropertyList& requiredProperties) = 0;
   /**
+   * @brief Gets the current properties to calculate.
+   */
+  virtual Utils::PropertyList getRequiredProperties() const = 0;
+  /**
    * @brief Returns the list of the possible properties to calculate analytically.
    * By some method analytical hessian calculation is not possible. In this case the
    * hessian calculation is done seminumerically.
    */
   virtual Utils::PropertyList possibleProperties() const = 0;
   /**
-   * @brief The main function running calculations (dummy).
+   * @brief The main function running calculations.
    *
    * @param description   The calculation description.
    * @return Utils::Result Return the result of the calculation. The object contains the
@@ -104,16 +86,6 @@ class Calculator {
    */
   virtual const Utils::Settings& settings() const = 0;
   /**
-   * @brief Accessor for the StatesHandler.
-   * @return Utils::StatesHandler& The StatesHandler.
-   */
-  virtual Utils::StatesHandler& statesHandler() = 0;
-  /**
-   * @brief Constant accessor for the StatesHandler.
-   * @return const Utils::StatesHandler& The StatesHandler.
-   */
-  virtual const Utils::StatesHandler& statesHandler() const = 0;
-  /**
    * @brief Accessor for the saved instance of Utils::Results.
    * @return Utils::Results& The results of the previous calculation.
    */
@@ -123,6 +95,28 @@ class Calculator {
    * @return const Utils::Results& The results of the previous calculation.
    */
   virtual const Utils::Results& results() const = 0;
+  /**
+   * @brief Whether the calculator supports a method family
+   *
+   * @param methodFamily identifier for the method family
+   *
+   * @return whether the calculator supports a method family
+   */
+  virtual bool supportsMethodFamily(const std::string& methodFamily) const = 0;
+  /**
+   * @brief Predicate-generator for ModuleManager's get<Interface, UnaryPredicate>
+   *   function
+   *
+   * @param methodFamily The method family to check support for
+   *
+   * @return A lambda capturing the method family that checks passed interface
+   * pointer objects for method family support
+   */
+  static auto supports(const std::string& methodFamily) {
+    return [methodFamily](const std::shared_ptr<Calculator>& calculatorPtr) -> bool {
+      return calculatorPtr->supportsMethodFamily(methodFamily);
+    };
+  }
 
  private:
   /*

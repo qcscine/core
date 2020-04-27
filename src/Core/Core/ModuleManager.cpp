@@ -23,9 +23,11 @@ bool patternMatchModuleLibrary(const std::string& filename) {
 
 } // namespace detail
 
-struct ModuleManager::LibraryAndModule {
+struct ModuleManager::LibraryAndModules {
+  using ModulePtr = std::shared_ptr<Module>;
+  using ModuleList = std::vector<ModulePtr>;
   boost::dll::shared_library library;
-  std::shared_ptr<Module> modulePtr;
+  ModuleList modules;
 
   static boost::dll::shared_library tryLoad(const boost::filesystem::path& libraryPath) {
     boost::system::error_code error;
@@ -45,31 +47,33 @@ struct ModuleManager::LibraryAndModule {
    * not default-constructible
    */
 
-  explicit LibraryAndModule(boost::dll::shared_library shlib) : library(std::move(shlib)) {
+  explicit LibraryAndModules(boost::dll::shared_library shlib) : library(std::move(shlib)) {
     if (!library.has("moduleFactory")) {
       throw std::runtime_error("Module loaded does not have signature for Core");
     }
 
     // Predefine the function signature of the module factory function
-    using ModuleFactorySignature = std::shared_ptr<Module>();
+    using ModuleFactorySignature = std::vector<std::shared_ptr<Module>>();
     /* Import the module factory function symbol from the shared library and
      * immediately call it, constructing a module base class pointer
      */
-    modulePtr = library.get_alias<ModuleFactorySignature>("moduleFactory")();
+    modules = library.get_alias<ModuleFactorySignature>("moduleFactory")();
   }
-  explicit LibraryAndModule(const boost::filesystem::path& libraryPath) : LibraryAndModule(tryLoad(libraryPath)) {
+  explicit LibraryAndModules(const boost::filesystem::path& libraryPath) : LibraryAndModules(tryLoad(libraryPath)) {
   }
 };
 
-std::vector<ModuleManager::LibraryAndModule> ModuleManager::_sources;
+std::vector<ModuleManager::LibraryAndModules> ModuleManager::_sources;
 
 void ModuleManager::load(const boost::filesystem::path& libraryPath) {
   // Forward the path to the LibraryAndModule constructor
-  LibraryAndModule lib(libraryPath);
+  LibraryAndModules lib(libraryPath);
 
   // Throw if the module is already loaded
-  if (moduleLoaded(lib.modulePtr->name())) {
-    throw std::runtime_error("Module is already loaded!");
+  for (auto& modulePtr : lib.modules) {
+    if (moduleLoaded(modulePtr->name())) {
+      throw std::runtime_error("Module is already loaded");
+    }
   }
 
   _sources.push_back(std::move(lib));
@@ -77,11 +81,13 @@ void ModuleManager::load(const boost::filesystem::path& libraryPath) {
 
 void ModuleManager::load(boost::dll::shared_library library) {
   // Forward the shared_library to the LibraryAndModule constructor
-  LibraryAndModule lib(std::move(library));
+  LibraryAndModules lib(std::move(library));
 
   // Throw if the module is already loaded
-  if (moduleLoaded(lib.modulePtr->name())) {
-    throw std::runtime_error("Module is already loaded!");
+  for (auto& modulePtr : lib.modules) {
+    if (moduleLoaded(modulePtr->name())) {
+      throw std::runtime_error("Module is already loaded");
+    }
   }
 
   _sources.push_back(std::move(lib));
@@ -91,7 +97,9 @@ std::vector<std::string> ModuleManager::getLoadedModuleNames() const {
   std::vector<std::string> list;
   list.reserve(_sources.size());
   for (const auto& source : _sources) {
-    list.push_back(source.modulePtr->name());
+    for (const auto& modulePtr : source.modules) {
+      list.push_back(modulePtr->name());
+    }
   }
   return list;
 }
@@ -101,12 +109,14 @@ std::vector<std::string> ModuleManager::getLoadedInterfaces() const {
   std::vector<std::string> interfaces;
 
   for (const auto& source : _sources) {
-    auto sourceInterfaces = source.modulePtr->announceInterfaces();
-    for (auto& interfaceName : sourceInterfaces) {
-      auto findIter = std::lower_bound(std::begin(interfaces), std::end(interfaces), interfaceName);
+    for (const auto& modulePtr : source.modules) {
+      auto sourceInterfaces = modulePtr->announceInterfaces();
+      for (auto& interfaceName : sourceInterfaces) {
+        auto findIter = std::lower_bound(std::begin(interfaces), std::end(interfaces), interfaceName);
 
-      if (findIter == std::end(interfaces) || *findIter != interfaceName) {
-        interfaces.insert(findIter, std::move(interfaceName));
+        if (findIter == std::end(interfaces) || *findIter != interfaceName) {
+          interfaces.insert(findIter, std::move(interfaceName));
+        }
       }
     }
   }
@@ -118,35 +128,48 @@ std::vector<std::string> ModuleManager::getLoadedModels(const std::string& inter
   std::vector<std::string> models;
 
   for (const auto& source : _sources) {
-    auto sourceModels = source.modulePtr->announceModels(interface);
-    std::move(std::begin(sourceModels), std::end(sourceModels), std::back_inserter(models));
+    for (const auto& modulePtr : source.modules) {
+      auto sourceModels = modulePtr->announceModels(interface);
+      std::move(std::begin(sourceModels), std::end(sourceModels), std::back_inserter(models));
+    }
   }
 
   return models;
 }
 
-bool ModuleManager::has(const std::string& interface, const std::string& model, const std::string moduleName) const {
+bool ModuleManager::has(const std::string& interface, const std::string& model, const std::string& moduleName) const {
+  // If the module name is specified, look in detailed fashion
   if (!moduleName.empty()) {
     for (const auto& source : _sources) {
-      if (source.modulePtr->has(interface, model)) {
-        return (source.modulePtr->name() == moduleName) || (source.modulePtr->name() == moduleName + "Module");
+      for (const auto& modulePtr : source.modules) {
+        if (modulePtr->name() != moduleName && modulePtr->name() != moduleName + "Module") {
+          continue;
+        }
+
+        if (modulePtr->has(interface, model)) {
+          return true;
+        }
       }
     }
     return false;
   }
-  else {
-    for (const auto& source : _sources) {
-      if (source.modulePtr->has(interface, model)) {
+
+  for (const auto& source : _sources) {
+    for (const auto& modulePtr : source.modules) {
+      if (modulePtr->has(interface, model)) {
         return true;
       }
     }
-    return false;
   }
+
+  return false;
 }
 
 bool ModuleManager::moduleLoaded(const std::string& moduleName) const {
-  return std::find_if(std::begin(_sources), std::end(_sources), [&moduleName](const LibraryAndModule& libModule) -> bool {
-           return moduleName == libModule.modulePtr->name();
+  return std::find_if(std::begin(_sources), std::end(_sources), [&moduleName](const LibraryAndModules& libModule) -> bool {
+           return std::find_if(std::begin(libModule.modules), std::end(libModule.modules),
+                               [&moduleName](const auto& modulePtr) -> bool { return moduleName == modulePtr->name(); }) !=
+                  std::end(libModule.modules);
          }) != std::end(_sources);
 }
 
@@ -161,7 +184,7 @@ ModuleManager::ModuleManager() {
     std::for_each(boost::filesystem::directory_iterator(directoryPath), end, [&](const auto& filePath) {
       if (detail::patternMatchModuleLibrary(filePath.path().filename().string())) {
         try {
-          load(filePath);
+          this->load(filePath);
         }
         catch (...) {
         }
@@ -215,24 +238,61 @@ ModuleManager::ModuleManager() {
   }
 }
 
-boost::any ModuleManager::_get(const std::string& interface, const std::string& model, const std::string moduleName) const {
+boost::any ModuleManager::_get(const std::string& interface, const std::string& model, const std::string& moduleName) const {
   if (!moduleName.empty()) {
     for (const auto& source : _sources) {
-      if (source.modulePtr->has(interface, model)) {
-        if ((source.modulePtr->name() == moduleName) || (source.modulePtr->name() == moduleName + "Module")) {
-          return source.modulePtr->get(interface, model);
+      for (const auto& modulePtr : source.modules) {
+        if ((modulePtr->name() != moduleName) && (modulePtr->name() != moduleName + "Module")) {
+          continue;
+        }
+
+        if (modulePtr->has(interface, model)) {
+          return modulePtr->get(interface, model);
         }
       }
     }
   }
-  else {
-    for (const auto& source : _sources) {
-      if (source.modulePtr->has(interface, model)) {
-        return source.modulePtr->get(interface, model);
+
+  for (const auto& source : _sources) {
+    for (const auto& modulePtr : source.modules) {
+      if (modulePtr->has(interface, model)) {
+        return modulePtr->get(interface, model);
       }
     }
   }
+
   throw ClassNotImplementedError{};
+}
+
+std::vector<boost::any> ModuleManager::_getAll(const std::string& interface, const std::string& moduleName) const {
+  std::vector<boost::any> models;
+
+  if (!moduleName.empty()) {
+    for (const auto& source : _sources) {
+      for (const auto& modulePtr : source.modules) {
+        if ((modulePtr->name() != moduleName) && (modulePtr->name() != moduleName + "Module")) {
+          continue;
+        }
+
+        for (const auto& model : modulePtr->announceModels(interface)) {
+          models.push_back(modulePtr->get(interface, model));
+        }
+
+        return models;
+      }
+    }
+    return models;
+  }
+
+  for (const auto& source : _sources) {
+    for (const auto& modulePtr : source.modules) {
+      for (const auto& model : modulePtr->announceModels(interface)) {
+        models.push_back(modulePtr->get(interface, model));
+      }
+    }
+  }
+
+  return models;
 }
 
 } /* namespace Core */

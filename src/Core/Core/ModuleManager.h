@@ -46,7 +46,7 @@ class CORE_EXPORT ModuleManager {
   /**
    * @brief Static instance getter.
    *
-   * This static function assures the single instanciation of a ModuleManager
+   * This static function assures the single instantiation of a ModuleManager
    * for more information google the singleton design pattern.
    *
    * @return Returns a reference to the ModuleManager instance.
@@ -147,7 +147,7 @@ class CORE_EXPORT ModuleManager {
    * @return Whether the model is available. If so, get() should be safe to call.
    */
   template<typename Interface>
-  bool has(const std::string& model, const std::string moduleName = "") const {
+  bool has(const std::string& model, const std::string& moduleName = "") const {
     return has(Interface::interface, model, moduleName);
   }
 
@@ -163,7 +163,7 @@ class CORE_EXPORT ModuleManager {
    *
    * @return Whether the model is available. If so, get() should be safe to call.
    */
-  bool has(const std::string& interface, const std::string& model, const std::string moduleName = "") const;
+  bool has(const std::string& interface, const std::string& model, const std::string& moduleName = "") const;
 
   /**
    * @brief Creates a model of an interface and returns a base-class pointer.
@@ -185,10 +185,50 @@ class CORE_EXPORT ModuleManager {
    *   interface.
    */
   template<typename Interface>
-  std::shared_ptr<Interface> get(const std::string& model, const std::string moduleName = "") const {
+  std::shared_ptr<Interface> get(const std::string& model, const std::string& moduleName = "") const {
     auto any = _get(Interface::interface, model, moduleName);
     assert(!any.empty() && "Contract of a module's get states that the any may not be empty!");
     return boost::any_cast<std::shared_ptr<Interface>>(any);
+  }
+
+  /**
+   * @brief Find a model satisfying a predicate
+   *
+   * @tparam Interface The interface class type (e.g. Calculator)
+   * @tparam UnaryPredicate Unary predicate function or functor of signature (std::shared_ptr<Interface> -> bool)
+   * @param predicate instance of UnaryPredicate
+   * @param moduleName String identifier of a module. If given, searches for
+   *   models of @p Interface only in that module.
+   *
+   * @throws std::runtime_error If no models of this interface are loaded or if
+   * no model matches the supplied predicate.
+   *
+   * @return A non-empty interface shared pointer
+   */
+  template<typename Interface, typename UnaryPredicate>
+  std::enable_if_t<!std::is_convertible<UnaryPredicate, std::string>::value, std::shared_ptr<Interface>>
+  get(UnaryPredicate&& predicate, const std::string& moduleName = "") const {
+    /* NOTE: Yes, this implementation is a little wasteful in that it gathers
+     * all models, and only then tests the predicate, but this is necessary
+     * to maintain type erasure. Only here do we know what interface type the
+     * models actually are and only here can we call a predicate on them.
+     */
+    auto anys = _getAll(Interface::interface, moduleName);
+
+    if (anys.empty()) {
+      throw std::runtime_error("There are no models of this interface loaded.");
+    }
+
+    for (auto& any : anys) {
+      assert(!any.empty() && "Contract of a module's get states the any may not be empty!");
+      auto interfacePtr = boost::any_cast<std::shared_ptr<Interface>>(any);
+      assert(interfacePtr && "Contract of module's get states the wrapped pointer may not be empty!");
+      if (predicate(interfacePtr)) {
+        return interfacePtr;
+      }
+    }
+
+    throw std::runtime_error("No model matches the supplied predicate!");
   }
 
   /**
@@ -220,14 +260,28 @@ class CORE_EXPORT ModuleManager {
    *
    * @return A boost::any-wrapped std::shared_ptr<Interface>
    */
-  boost::any _get(const std::string& interface, const std::string& model, const std::string moduleName = "") const;
+  boost::any _get(const std::string& interface, const std::string& model, const std::string& moduleName = "") const;
+
+  /**
+   * @brief Fetches all models of an interface, optionally just from a single module
+   *
+   * @param interface interface identifier that the module matches
+   * @param moduleName The string identifier of a particular model. If not
+   *                   empty, queries for models only in that particular
+   *                   module. Module names will also be expanded: 'XYZ' will
+   *                   also query for 'XYZModule'
+   *
+   * @return a vector of boost::anys wrapping std::shared_ptr<Interface>. The
+   * vector may be empty, the shared_ptrs will not.
+   */
+  std::vector<boost::any> _getAll(const std::string& interface, const std::string& moduleName = "") const;
 
   /**
    * @brief Named union type to associate a shared library with its module
    */
-  struct LibraryAndModule;
+  struct LibraryAndModules;
 
-  static std::vector<LibraryAndModule> _sources;
+  static std::vector<LibraryAndModules> _sources;
 };
 
 } /* namespace Core */

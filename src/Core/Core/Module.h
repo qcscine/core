@@ -43,7 +43,6 @@ namespace Core {
  *
  * @code{.cpp}
  * #include <Core/Module.h>
- * #include <boost/hana/define_struct.hpp>
  * #include <boost/dll/alias.hpp>
  * #include <memory>
  *
@@ -51,29 +50,19 @@ namespace Core {
  *
  * class FooModule : public Core::Module {
  * public:
- *   // Use hana to define member variables that contain the model string
- *   // name for interfaces for which you have at least one model
- *   BOOST_HANA_DEFINE_STRUCT(FooModule, (std::vector<std::string>, sampleInterfaceName), ...);
- *
- *   // In your module constructor, populate your previously defined vec<str>
- *   // members with the interfaces' model identifiers that you provide
- *   FooModule(...) {
- *     sampleInterfaceName = {"sampleModelName"};
- *   }
- *
- *   // Implement name() and get(...)
- *   // Use DerivedModule.h to implement has(...), announceInterfaces(),
+ *   // Implement name()
+ *   // Use DerivedModule.h to implement has(...), get(...), announceInterfaces(),
  *   //   announceModels(...)
- *
- *   // Add a factory
- *   static std::shared_ptr<Core::Module> make() {
- *     return std::make_shared<FooModule>(...);
- *   }
  * };
+ *
+ * std::vector<std::shared_ptr<Core::Module>> moduleFactory() {
+ *   return {std::make_shared<FooModule>()};
+ * }
+ *
  * } // namespace XYZ
  *
  * // At global scope, declare an entry point called "moduleFactory"
- * BOOST_DLL_ALIAS(XYZ::FooModule::make, moduleFactory)
+ * BOOST_DLL_ALIAS(XYZ::moduleFactory, moduleFactory)
  * @endcode
  */
 class Module {
@@ -90,6 +79,17 @@ class Module {
    * @brief Creates a type-erased wrapper around a shared_ptr to a model of a
    *   interface.
    *
+   * @note Derived classes can implement this function using DerivedModule.h:
+   * @code{.cpp}
+   * boost::any FooModule::get(const std::string& interface, const std::string& model) const final {
+   *  boost::any resolved = Scine::Core::DerivedModule::resolve<InterfaceModelMap>(interface, model);
+   *
+   *  if (resolved.empty()) {
+   *    throw Scine::Core::ClassNotImplementedError();
+   *  }
+   *  return resolved;
+   * }
+   * @endcode
    * @throws X If the derived class does not supply models of the interface.
    *
    * @returns A type-erased interface model. Use try_cast to extract a pointer
@@ -101,11 +101,10 @@ class Module {
   /*!
    * @brief Checks if this module supplies a particular model of an interface.
    *
-   * @note Derived classes that make use of BOOST_HANA_DEFINE_STRUCT can
-   * implement this function using DerivedModule.h:
+   * @note Derived classes can implement this function using DerivedModule.h:
    * @code{.cpp}
    * bool FooModule::has(const std::string& interface, const std::string& model) const noexcept final {
-   *   return Core::DerivedModule::has(interface, model, *this);
+   *   return Core::DerivedModule::has<InterfaceModelMap>(interface, model);
    * }
    * @endcode
    */
@@ -115,11 +114,10 @@ class Module {
   /*!
    * @brief Announces all interfaces of which the module provides at least one model
    *
-   * @note Derived classes that make use of BOOST_HANA_DEFINE_STRUCT can
-   * implement this function using DerivedModule.h:
+   * @note Derived classes can implement this function using DerivedModule.h:
    * @code{.cpp}
    * bool FooModule::announceInterfaces() const noexcept final {
-   *   return Core::DerivedModule::announceInterfaces(*this);
+   *   return Core::DerivedModule::announceInterfaces<InterfaceModelMap>();
    * }
    * @endcode
    */
@@ -130,11 +128,10 @@ class Module {
    * @note If the class supplies no models of a particular interface, this list
    *   is empty.
    *
-   * @note Derived classes that make use of BOOST_HANA_DEFINE_STRUCT can
-   * implement this function using DerivedModule.h:
+   * @note Derived classes can implement this function using DerivedModule.h:
    * @code{.cpp}
    * bool FooModule::announceModels(const std::string& interface) const noexcept final {
-   *   return Core::DerivedModule::announceModels(interface, *this);
+   *   return Core::DerivedModule::announceModels<InterfaceModelMap>(interface);
    * }
    * @endcode
    */

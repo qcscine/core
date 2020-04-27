@@ -57,6 +57,16 @@ class FunctionNotImplementedError : public std::exception {
 };
 
 /**
+ * @class StateCastingException @file Exception.h
+ * @brief Exception to be thrown if the state cannot be cast to the desired type.
+ */
+class StateCastingException : public std::exception {
+  const char* what() const noexcept final {
+    return "State pointer does not have a compatible underlying type.";
+  }
+};
+
+/**
  * @class InvalidPropertiesException Exceptions.h
  * @brief Exception thrown when one requires properties from a calculation which cannot be calculated.
  */

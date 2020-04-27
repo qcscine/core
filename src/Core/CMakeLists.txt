@@ -24,8 +24,12 @@ target_link_libraries(Core
     Boost::system
 )
 
+if(NOT "${SCINE_MARCH}" STREQUAL "" AND NOT MSVC)
+  target_compile_options(Core PUBLIC -march=${SCINE_MARCH})
+endif()
+
+
 # Add namespaced aliases
-add_library(Scine::Core ALIAS Core)
 add_library(Scine::Core ALIAS Core)
 
 # -- Define Install
@@ -48,3 +52,7 @@ scine_install_component_cmake_files(
   COMPONENT Core
   EXPORT_NAME CoreTargets
 )
+
+if(SCINE_BUILD_TESTS)
+  add_subdirectory(Tests)
+endif()

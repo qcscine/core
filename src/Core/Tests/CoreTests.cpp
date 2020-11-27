@@ -1,10 +1,12 @@
 /**
  * @file CoreTests.cpp
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory for Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 #include "DummyInterface.h"
+#include <Core/BaseClasses/ObjectWithLog.h>
+#include <Core/Log.h>
 #include <Core/ModuleManager.h>
 #include <gmock/gmock.h>
 
@@ -42,4 +44,17 @@ TEST(CoreModules, ModuleCorrectness) {
 
   auto bazPtr = manager.get<DummyInterface>("dummy_b");
   ASSERT_EQ(bazPtr->name(), "DummyB");
+}
+
+TEST(ObjectWithLog, Basics) {
+  struct Foo : public ObjectWithLog {};
+
+  Foo f;                // default ctor
+  Foo g{Foo()};         // move ctor
+  Foo h(g);             // copy ctor
+  Foo i = std::move(f); // move assign
+  g = i;                // copy assign
+
+  Log& log = h.getLog();
+  i.setLog(Log::silent());
 }

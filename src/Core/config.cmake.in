@@ -1,7 +1,19 @@
 # Add dependencies for your component
 include(CMakeFindDependencyMacro)
+
+# This might seem like overkill, but it's best not to define
+# Boost_USE_STATIC_LIBS if the user hasn't made a non-default choice (default
+# is OFF). Additionally, we need to check that linking styles aren't mixed.
+set(_COMPILED_WITH_STATIC_BOOST @Boost_USE_STATIC_LIBS@)
+if(_COMPILED_WITH_STATIC_BOOST)
+  if(DEFINED Boost_USE_STATIC_LIBS AND NOT Boost_USE_STATIC_LIBS)
+    message(FATAL_ERROR "Scine Core was compiled with static boost, but you have set the use of the shared boost libraries! Cannot mix static and shared linking.")
+  endif()
+  set(Boost_USE_STATIC_LIBS ON)
+endif()
+unset(_COMPILED_WITH_STATIC_BOOST)
+
 if(NOT TARGET Boost::filesystem OR NOT TARGET Boost::system)
-  set(Boost_USE_STATIC_LIBS OFF)
   unset(Boost_FOUND)
   find_dependency(Boost REQUIRED COMPONENTS filesystem system)
 endif()
@@ -13,7 +25,7 @@ if (NOT DEFINED SCINE_MARCH)
   set(SCINE_MARCH "@SCINE_MARCH@")
 endif()
 
-include(${CMAKE_CURRENT_LIST_DIR}/CoreTargets.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/ScineCoreTargets.cmake)
 
 @PACKAGE_INIT@
 

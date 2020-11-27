@@ -1,14 +1,16 @@
 include(Files.cmake)
 
-set(Boost_USE_STATIC_LIBS OFF)
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 
-# Shared lib
-add_library(Core SHARED ${CORE_FILES})
-target_include_directories(Core PUBLIC
+add_library(CoreHeaders INTERFACE)
+target_include_directories(CoreHeaders INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>
+  $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include/Scine>
 )
+target_link_libraries(CoreHeaders INTERFACE Boost::boost)
+
+# Core is always a shared lib because of the module manager singleton
+add_library(Core SHARED ${CORE_HEADERS} ${CORE_CPPS})
 set_target_properties(Core PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   OUTPUT_NAME core
@@ -17,39 +19,69 @@ set_target_properties(Core PROPERTIES
 
 target_link_libraries(Core
   PUBLIC
-    Boost::boost
+    CoreHeaders
     Boost::filesystem
-    ${CMAKE_DL_LIBS}
   PRIVATE
-    Boost::system
+    ${CMAKE_DL_LIBS}
 )
+
+macro(determine_lib_type target)
+  get_target_property(_target_type ${target} TYPE)
+  if(${_target_type} STREQUAL "SHARED_LIBRARY")
+    set(LIB_TYPE "SHARED_LIBRARY")
+  elseif(${_target_type} STREQUAL "STATIC_LIBRARY")
+    set(LIB_TYPE "STATIC_LIBRARY")
+  elseif(${_target_type} STREQUAL "UNKNOWN_LIBRARY")
+    get_target_property(_target_location ${target} LOCATION)
+    get_filename_component(_target_extension ${_target_location} EXT)
+    if(${_target_extension} STREQUAL ${CMAKE_SHARED_LIBRARY_SUFFIX})
+      set(LIB_TYPE "SHARED_LIBRARY")
+    elseif(${_target_extension} STREQUAL ${CMAKE_STATIC_LIBRARY_SUFFIX})
+      set(LIB_TYPE "STATIC_LIBRARY")
+    else()
+      set(LIB_TYPE "UNKNOWN_LIBRARY")
+    endif()
+    unset(_target_location)
+    unset(_target_extension)
+  endif()
+  unset(_target_type)
+endmacro()
+
+determine_lib_type(Boost::filesystem)
+if(${LIB_TYPE} STREQUAL "SHARED_LIBRARY")
+  target_compile_definitions(Core PUBLIC BOOST_ALL_DYN_LINK)
+endif()
+unset(LIB_TYPE)
 
 if(NOT "${SCINE_MARCH}" STREQUAL "" AND NOT MSVC)
   target_compile_options(Core PUBLIC -march=${SCINE_MARCH})
+  target_compile_options(CoreHeaders INTERFACE -march=${SCINE_MARCH})
 endif()
 
 
 # Add namespaced aliases
+add_library(Scine::CoreHeaders ALIAS CoreHeaders)
 add_library(Scine::Core ALIAS Core)
 
 # -- Define Install
 # Headers
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Core/
-  DESTINATION include/Core
-        FILES_MATCHING PATTERN "*.h"
+install(
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Core/
+  DESTINATION include/Scine/Core
+  FILES_MATCHING PATTERN "*.h"
 )
 
 # Targets
-install(TARGETS Core
+install(
+  TARGETS CoreHeaders Core
   EXPORT CoreTargets
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
-  PUBLIC_HEADER DESTINATION include/Core
 )
 
 # Component-level cmake package files
 scine_install_component_cmake_files(
-  COMPONENT Core
+  COMPONENT ScineCore
   EXPORT_NAME CoreTargets
 )
 

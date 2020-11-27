@@ -9,7 +9,12 @@ set_target_properties(SampleModule PROPERTIES
 )
 target_link_libraries(SampleModule PUBLIC Scine::Core)
 
+set(CORE_TEST_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/CoreTests.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Log.cpp
+)
+
 # Build the tests
-add_executable(CoreTests CoreTests.cpp)
-target_link_libraries(CoreTests PRIVATE Scine::Core gtest_main gmock)
+add_executable(CoreTests ${CORE_TEST_FILES})
+target_link_libraries(CoreTests PRIVATE Scine::Core GTest::Main GMock::GMock)
 add_test(NAME Core COMMAND CoreTests)

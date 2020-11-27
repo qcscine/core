@@ -1,12 +1,13 @@
 /**
  * @file Calculator.h
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory for Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 #ifndef CORE_CALCULATORWITHREFERENCE_H
 #define CORE_CALCULATORWITHREFERENCE_H
 /* Internal Includes */
+#include "Core/BaseClasses/ObjectWithLog.h"
 #include "Core/ExportControl.h"
 /* External Includes */
 #include <Eigen/Core>
@@ -26,12 +27,11 @@ class Calculator;
  * @class CalculatorWithReference CalculatorWithReference.h
  * @brief The interface for all classes running calculations on top of a
  *        reference calculation.
- * This can be, for example, excited states calculation (CIS, TD-DFT,..), post-HF,
- * but also thermodynamics calculations and the CISE approach.
+ * This can be, for example, excited states calculation (CIS, TD-DFT(B),..) and post-HF.
  */
-class CalculatorWithReference {
+class CalculatorWithReference : public ObjectWithLog {
  public:
-  static constexpr const char* interface = "calculatorWithReference";
+  static constexpr const char* interface = "calculator_with_reference";
   /// @brief Default constructor.
   CalculatorWithReference() = default;
   /// @brief Virtual destructor.
@@ -40,6 +40,7 @@ class CalculatorWithReference {
    * @brief Sets the calculator to be used to perform the reference calculation.
    * In the derived classes care must be taken that the case where a method does not accept
    * some calculator types (i.e CIS with DFT, or TDDFT with HF) is checked and handled.
+   * @throws if the referenceCalculator is not a valid reference calculator for this class instance.
    */
   virtual void setReferenceCalculator(std::shared_ptr<Calculator> referenceCalculator) = 0;
   /**
@@ -59,24 +60,10 @@ class CalculatorWithReference {
   virtual const Core::Calculator& getReferenceCalculator() const = 0;
 
   /**
-   * @brief Accessor for the calculator, if present.
-   * @return Core::Calculator& The calculator.
+   * @brief The main function running the calculation with reference.
+   * @returns A const-ref of stored (and newly calculated) Results.
    */
-  virtual Core::Calculator& getCalculator() = 0;
-  /**
-   * @brief Constant accessor for the calculator, if present.
-   * @return const Core::Calculator& The calculator.
-   */
-  virtual const Core::Calculator& getCalculator() const = 0;
-
-  /**
-   * @brief The main function running the calculation.
-   * @return ReturnType Since different methods can give different return types,
-   *                    a templetized return type has been chosen.
-   *                    The derived class must derive from the right version
-   *                    of the CalculatorWithReference<ReturnType> class.
-   */
-  virtual Utils::Results calculate() = 0;
+  virtual const Utils::Results& calculate() = 0;
 
   /**
    * @brief Getter for the name of the calculator with reference.
@@ -98,6 +85,16 @@ class CalculatorWithReference {
    * @brief Method to apply the settings stored in the settings data structure.
    */
   virtual void applySettings() = 0;
+  /**
+   * @brief Accessor for the saved instance of Utils::Results.
+   * @return Utils::Results& The results of the previous calculation.
+   */
+  virtual Utils::Results& results() = 0;
+  /**
+   * @brief Constant accessor for the Utils::Results.
+   * @return const Utils::Results& The results of the previous calculation.
+   */
+  virtual const Utils::Results& results() const = 0;
 };
 
 } // namespace Core

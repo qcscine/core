@@ -1,15 +1,15 @@
 /**
  * @file Calculator.h
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory for Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 #ifndef CORE_CALCULATOR_H_
 #define CORE_CALCULATOR_H_
 /* Internal Includes */
+#include "Core/BaseClasses/ObjectWithLog.h"
 #include "Core/BaseClasses/ObjectWithStructure.h"
 #include "Core/BaseClasses/StateHandableObject.h"
-#include "Core/ExportControl.h"
 /* External Includes */
 #include <string>
 
@@ -20,7 +20,6 @@ class Results;
 class Settings;
 class StatesHandler;
 class PropertyList;
-class AdditiveElectronicContribution;
 } // namespace Utils
 
 namespace Core {
@@ -28,7 +27,7 @@ namespace Core {
  * @class Calculator Calculator.h
  * @brief The interface for all classes running electronic structure calculations.
  */
-class Calculator : public StateHandableObject, public ObjectWithStructure {
+class Calculator : public StateHandableObject, public ObjectWithStructure, public ObjectWithLog {
  public:
   static constexpr const char* interface = "calculator";
 

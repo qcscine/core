@@ -1,7 +1,7 @@
 /**
  * @file ModuleManager.cpp
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory for Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
@@ -14,14 +14,14 @@
 namespace Scine {
 namespace Core {
 
-namespace detail {
+namespace {
 
 bool patternMatchModuleLibrary(const std::string& filename) {
-  std::string expectedModuleSuffix = "module" + boost::dll::shared_library::suffix().string();
+  std::string expectedModuleSuffix = ".module" + boost::dll::shared_library::suffix().string();
   return filename.find(expectedModuleSuffix) != std::string::npos;
 }
 
-} // namespace detail
+} // namespace
 
 struct ModuleManager::LibraryAndModules {
   using ModulePtr = std::shared_ptr<Module>;
@@ -178,11 +178,11 @@ ModuleManager::ModuleManager() {
   auto executableParentPath = boost::dll::program_location().parent_path();
   const boost::filesystem::directory_iterator end;
 
-  auto loadModulesInPath = [&](const boost::filesystem::path& directoryPath) {
+  auto tryLoadModulesInPath = [&](const boost::filesystem::path& directoryPath) {
     assert(boost::filesystem::is_directory(directoryPath));
 
     std::for_each(boost::filesystem::directory_iterator(directoryPath), end, [&](const auto& filePath) {
-      if (detail::patternMatchModuleLibrary(filePath.path().filename().string())) {
+      if (patternMatchModuleLibrary(filePath.path().filename().string())) {
         try {
           this->load(filePath);
         }
@@ -192,21 +192,24 @@ ModuleManager::ModuleManager() {
     });
   };
 
-  /* Look for modules in the same path as the current executable (if all
-   * installed into the same place)
-   */
-  loadModulesInPath(executableParentPath);
+  // Look for modules in a path and directories adjacent to it
+  auto tryAdjacentDirectories = [&](const boost::filesystem::path& directory) {
+    const std::vector<std::string> sameLevelDirectories{{"module", "modules", "lib"}};
 
-  /* Look for modules in named paths adjacent to that in which the executable is
-   * (for when bin and module are adjacent)
-   */
-  std::vector<std::string> sameLevelDirectories{{"module", "modules"}};
-
-  for (const auto& directoryName : sameLevelDirectories) {
-    auto pathToDirectory = executableParentPath.parent_path() / directoryName;
-    if (boost::filesystem::exists(pathToDirectory) && boost::filesystem::is_directory(pathToDirectory)) {
-      loadModulesInPath(pathToDirectory);
+    for (const auto& directoryName : sameLevelDirectories) {
+      const auto pathToDirectory = directory.parent_path() / directoryName;
+      if (boost::filesystem::exists(pathToDirectory) && boost::filesystem::is_directory(pathToDirectory)) {
+        tryLoadModulesInPath(pathToDirectory);
+      }
     }
+  };
+
+  tryLoadModulesInPath(executableParentPath);
+  tryAdjacentDirectories(executableParentPath);
+  auto coreLocationParent = boost::dll::this_line_location().parent_path();
+  tryLoadModulesInPath(coreLocationParent);
+  if (coreLocationParent.parent_path() != executableParentPath.parent_path()) {
+    tryAdjacentDirectories(coreLocationParent);
   }
 
   // SCINE_MODULE_PATH environment variable. Path separators are os-dependent
@@ -224,7 +227,7 @@ ModuleManager::ModuleManager() {
       endPos = modulePath.find(pathSep, startPos);
       std::string singlePath = modulePath.substr(startPos, endPos);
       if (!singlePath.empty() && boost::filesystem::exists(singlePath) && boost::filesystem::is_directory(singlePath)) {
-        loadModulesInPath(singlePath);
+        tryLoadModulesInPath(singlePath);
       }
       /* If endPos is not npos, then adding one merely skips the found delimiter
        * for the start of the next substring.

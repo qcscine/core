@@ -1,13 +1,14 @@
 /**
  * @file MMParametrizer.h
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory for Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 
 #ifndef CORE_MMPARAMETRIZER_H
 #define CORE_MMPARAMETRIZER_H
 
+#include "Core/BaseClasses/ObjectWithLog.h"
 #include <string>
 
 namespace Scine {
@@ -22,7 +23,7 @@ namespace Core {
  * @class MMParametrizer MMParametrizer.h
  * @brief The interface for all classes parametrizing a molecular mechanics model.
  */
-class MMParametrizer {
+class MMParametrizer : public ObjectWithLog {
  public:
   static constexpr const char* interface = "mm_parametrizer";
 

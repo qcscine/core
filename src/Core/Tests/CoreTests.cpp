@@ -6,6 +6,7 @@
  */
 #include "DummyInterface.h"
 #include <Core/BaseClasses/ObjectWithLog.h>
+#include <Core/Impl/ModuleManager.h>
 #include <Core/Log.h>
 #include <Core/ModuleManager.h>
 #include <gmock/gmock.h>
@@ -46,6 +47,11 @@ TEST(CoreModules, ModuleCorrectness) {
   ASSERT_EQ(bazPtr->name(), "DummyB");
 }
 
+TEST(CoreModules, StringSplit) {
+  const std::vector<std::string> expected{{"a", "b", "c", "d"}};
+  ASSERT_EQ(Detail::split("a;b;c;d", ';'), expected);
+}
+
 TEST(ObjectWithLog, Basics) {
   struct Foo : public ObjectWithLog {};
 
@@ -55,6 +61,6 @@ TEST(ObjectWithLog, Basics) {
   Foo i = std::move(f); // move assign
   g = i;                // copy assign
 
-  Log& log = h.getLog();
+  h.getLog();
   i.setLog(Log::silent());
 }

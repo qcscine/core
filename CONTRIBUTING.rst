@@ -1,9 +1,8 @@
-==========================
 Contributing to SCINE Core
 ==========================
 
 Contribution Process
-====================
+--------------------
 
 The development for this code is done in a private repository maintained by the 
 Reiher Research Group. GitHub is only used for the official releases.
@@ -20,12 +19,12 @@ Please note that contributing a small change does in no way mean that you will
 be added to the author list of a future paper and/or Zenodo entry!
 
 Main Contributors
-=================
+-----------------
 
 Almost all contributions to SCINE in general and this repository in specific come 
 from members of the Reiher research group.
 
 Further Contributors
-====================
+--------------------
 
 So far, no one else has contributed to this repository.

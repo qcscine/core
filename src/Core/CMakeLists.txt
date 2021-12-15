@@ -26,29 +26,22 @@ target_link_libraries(Core
 )
 
 macro(determine_lib_type target)
-  get_target_property(_target_type ${target} TYPE)
-  if(${_target_type} STREQUAL "SHARED_LIBRARY")
-    set(LIB_TYPE "SHARED_LIBRARY")
-  elseif(${_target_type} STREQUAL "STATIC_LIBRARY")
-    set(LIB_TYPE "STATIC_LIBRARY")
-  elseif(${_target_type} STREQUAL "UNKNOWN_LIBRARY")
+  get_target_property(LIB_TYPE ${target} TYPE)
+  if("${LIB_TYPE}" STREQUAL "UNKNOWN_LIBRARY")
     get_target_property(_target_location ${target} LOCATION)
     get_filename_component(_target_extension ${_target_location} EXT)
     if(${_target_extension} STREQUAL ${CMAKE_SHARED_LIBRARY_SUFFIX})
       set(LIB_TYPE "SHARED_LIBRARY")
     elseif(${_target_extension} STREQUAL ${CMAKE_STATIC_LIBRARY_SUFFIX})
       set(LIB_TYPE "STATIC_LIBRARY")
-    else()
-      set(LIB_TYPE "UNKNOWN_LIBRARY")
     endif()
     unset(_target_location)
     unset(_target_extension)
   endif()
-  unset(_target_type)
 endmacro()
 
 determine_lib_type(Boost::filesystem)
-if(${LIB_TYPE} STREQUAL "SHARED_LIBRARY")
+if("${LIB_TYPE}" STREQUAL "SHARED_LIBRARY")
   target_compile_definitions(Core PUBLIC BOOST_ALL_DYN_LINK)
 endif()
 unset(LIB_TYPE)
@@ -68,7 +61,9 @@ add_library(Scine::Core ALIAS Core)
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Core/
   DESTINATION include/Scine/Core
-  FILES_MATCHING PATTERN "*.h"
+  FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "Impl*" EXCLUDE
 )
 
 # Targets

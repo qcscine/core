@@ -76,6 +76,9 @@ class CORE_EXPORT ModuleManager {
    */
   void operator=(ModuleManager const&) = delete;
 
+  // Destructor
+  ~ModuleManager();
+
   /**
    * @brief Loads a library as a module
    *
@@ -276,12 +279,8 @@ class CORE_EXPORT ModuleManager {
    */
   std::vector<boost::any> _getAll(const std::string& interface, const std::string& moduleName = "") const;
 
-  /**
-   * @brief Named union type to associate a shared library with its module
-   */
-  struct LibraryAndModules;
-
-  static std::vector<LibraryAndModules> _sources;
+  struct Impl;
+  std::unique_ptr<Impl> _impl;
 };
 
 } /* namespace Core */

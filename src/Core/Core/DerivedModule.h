@@ -57,9 +57,8 @@ struct exec_if_impl<false> {
       return exec_if_impl<boost::is_same<Next, LastIter>::value>::execute(static_cast<Next*>(0),
                                                                           static_cast<LastIter*>(0), p, e);
     }
-    else {
-      return e(static_cast<Item*>(0));
-    }
+
+    return e(static_cast<Item*>(0));
   }
 };
 
@@ -80,7 +79,7 @@ struct exec_if_impl<false> {
  *   Executable(T) for the first T in @p Sequence that matches Predicate.
  */
 template<typename Sequence, typename Predicate, typename Executable>
-inline auto exec_if(const Predicate& p, const Executable& e, Sequence* = 0) -> typename Executable::ResultType {
+inline auto exec_if(const Predicate& p, const Executable& e, Sequence* /* seq */ = 0) -> typename Executable::ResultType {
   BOOST_MPL_ASSERT((boost::mpl::is_sequence<Sequence>));
   using First = typename boost::mpl::begin<Sequence>::type;
   using Last = typename boost::mpl::end<Sequence>::type;
@@ -94,7 +93,7 @@ struct MapPairInterfaceIdentifierMatches {
   }
 
   template<typename PairType>
-  bool operator()(PairType* = 0) const {
+  bool operator()(PairType* /* pair */ = 0) const {
     using InterfaceType = typename boost::mpl::first<PairType>::type;
     return caseInsensitiveEqual(identifier, InterfaceType::interface);
   }
@@ -108,7 +107,7 @@ struct ModelTypeIdentifierMatches {
   }
 
   template<typename ModelType>
-  bool operator()(ModelType* = 0) const {
+  bool operator()(ModelType* /* model */ = 0) const {
     return caseInsensitiveEqual(identifier, ModelType::model);
   }
 
@@ -122,7 +121,7 @@ struct CreateInterfacePointer {
   using ResultType = boost::any;
 
   template<typename ModelType>
-  ResultType operator()(ModelType* = 0) const {
+  ResultType operator()(ModelType* /* model */ = 0) const {
     return static_cast<InterfaceTypePtr>(std::make_shared<ModelType>());
   }
 
@@ -139,7 +138,7 @@ struct ResolveModel {
   using ResultType = boost::any;
 
   template<typename PairType>
-  boost::any operator()(PairType* = 0) const {
+  boost::any operator()(PairType* /* model */ = 0) const {
     using InterfaceType = typename boost::mpl::first<PairType>::type;
     using ModelTypeList = typename boost::mpl::second<PairType>::type;
 
@@ -159,7 +158,7 @@ struct MatchFoundExecutor {
   using ResultType = bool;
 
   template<typename T>
-  ResultType operator()(T* = 0) const {
+  ResultType operator()(T* /* t */ = 0) const {
     return true;
   }
 
@@ -176,7 +175,7 @@ struct ModelExists {
   using ResultType = bool;
 
   template<typename PairType>
-  ResultType operator()(PairType* = 0) const {
+  ResultType operator()(PairType* /* pair */ = 0) const {
     using ModelTypeList = typename boost::mpl::second<PairType>::type;
 
     return exec_if<ModelTypeList>(detail::ModelTypeIdentifierMatches{identifier}, MatchFoundExecutor{});
@@ -194,7 +193,7 @@ struct ListModels {
   using ResultType = std::vector<std::string>;
 
   template<typename PairType>
-  ResultType operator()(PairType* = 0) const {
+  ResultType operator()(PairType* /* model */ = 0) const {
     using ModelTypeList = typename boost::mpl::second<PairType>::type;
 
     std::vector<std::string> models;

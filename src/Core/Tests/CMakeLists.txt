@@ -1,3 +1,6 @@
+include(ImportGTest)
+import_gtest()
+
 # Build a shared library module from SampleModule and the models
 add_library(SampleModule SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/SampleModule.cpp

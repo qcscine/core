@@ -65,7 +65,7 @@ extern "C" {
 const void* moduleFactory = reinterpret_cast<const void*>(reinterpret_cast<intptr_t>(&sample_namespace::moduleFactory));
 }
 #else
-BOOST_DLL_ALIAS(sample_namespace::moduleFactory, moduleFactory);
+BOOST_DLL_ALIAS(sample_namespace::moduleFactory, moduleFactory)
 #endif
 
 #endif /* SAMPLE_MODULE */

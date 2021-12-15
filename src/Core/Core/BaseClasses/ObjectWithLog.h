@@ -17,7 +17,8 @@ namespace Core {
 /**
  * @brief Base class for objects with a Log member
  *
- * Default log member is silent.
+ * Default log member prints output domain to stdout and the
+ * warning and error domains to stderr.
  *
  * @note Privately implemented to avoid include pollution with Log interface if
  * unused.
@@ -25,7 +26,12 @@ namespace Core {
 class CORE_EXPORT ObjectWithLog {
  public:
   //! Fetches a reference to the owned log instance
-  inline Log& getLog() {
+  Log& getLog() {
+    return log_;
+  }
+
+  //! Fetches a const reference to the owned log instance
+  const Log& getLog() const {
     return log_;
   }
 

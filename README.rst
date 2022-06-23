@@ -28,7 +28,7 @@ Dependencies
 ............
 
 Required software, minimum required versions in brackets, for this SCINE project are:
-- A C++ compiler supporting the C++14 standard
+- A C++ compiler supporting the C++17 standard
 - CMake (3.9)
 - Boost (1.65.0)
 
@@ -40,11 +40,12 @@ commands::
 
     git submodule init
     git submodule update
-    mkdir build inst
+    mkdir build
     cd build
     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../inst ..
     make -j 4
     make CoreDocumentation
+    make test
     make install
 
 Usage

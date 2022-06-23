@@ -217,10 +217,11 @@ struct ModuleManager::Impl {
   bool has(const std::string& interface, const std::string& model, const std::string& moduleName) const {
     // If the module name is specified, look in detailed fashion
     std::string moduleNameLower = boost::algorithm::to_lower_copy(moduleName);
-    if (!moduleName.empty() || moduleNameLower == "any") {
+    if (!moduleName.empty() && moduleNameLower != "any") {
       for (const auto& source : _sources) {
         for (const auto& modulePtr : source.modules) {
-          if (modulePtr->name() != moduleName && modulePtr->name() != moduleName + "Module") {
+          std::string modulePtrLower = boost::algorithm::to_lower_copy(modulePtr->name());
+          if ((modulePtrLower != moduleNameLower) && (modulePtrLower != moduleNameLower + "module")) {
             continue;
           }
 
@@ -253,10 +254,11 @@ struct ModuleManager::Impl {
 
   boost::any get(const std::string& interface, const std::string& model, const std::string& moduleName) const {
     std::string moduleNameLower = boost::algorithm::to_lower_copy(moduleName);
-    if (!moduleName.empty() || moduleNameLower == "any") {
+    if (!moduleName.empty() && moduleNameLower != "any") {
       for (const auto& source : _sources) {
         for (const auto& modulePtr : source.modules) {
-          if ((modulePtr->name() != moduleName) && (modulePtr->name() != moduleName + "Module")) {
+          std::string modulePtrLower = boost::algorithm::to_lower_copy(modulePtr->name());
+          if ((modulePtrLower != moduleNameLower) && (modulePtrLower != moduleNameLower + "module")) {
             continue;
           }
 
@@ -266,11 +268,12 @@ struct ModuleManager::Impl {
         }
       }
     }
-
-    for (const auto& source : _sources) {
-      for (const auto& modulePtr : source.modules) {
-        if (modulePtr->has(interface, model)) {
-          return modulePtr->get(interface, model);
+    else {
+      for (const auto& source : _sources) {
+        for (const auto& modulePtr : source.modules) {
+          if (modulePtr->has(interface, model)) {
+            return modulePtr->get(interface, model);
+          }
         }
       }
     }
@@ -282,10 +285,11 @@ struct ModuleManager::Impl {
     std::vector<boost::any> models;
 
     std::string moduleNameLower = boost::algorithm::to_lower_copy(moduleName);
-    if (!moduleName.empty() || moduleNameLower == "any") {
+    if (!moduleName.empty() && moduleNameLower != "any") {
       for (const auto& source : _sources) {
         for (const auto& modulePtr : source.modules) {
-          if ((modulePtr->name() != moduleName) && (modulePtr->name() != moduleName + "Module")) {
+          std::string modulePtrLower = boost::algorithm::to_lower_copy(modulePtr->name());
+          if ((modulePtrLower != moduleNameLower) && (modulePtrLower != moduleNameLower + "module")) {
             continue;
           }
 

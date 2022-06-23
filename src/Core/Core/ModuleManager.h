@@ -12,6 +12,7 @@
 #include "Core/ExportControl.h"
 #include "Core/Module.h"
 /* External Includes */
+#include <algorithm>
 #include <boost/filesystem.hpp>
 #include <memory>
 #include <vector>

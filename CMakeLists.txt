@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.9)
 # tree must then provide a properly namespaced target with the same name as
 # your project.
 project(Core
-  VERSION 4.0.1
+  VERSION 4.0.2
   DESCRIPTION "Module management and core interface definitions"
 )
 

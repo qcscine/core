@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Release 4.1.0
+-------------
+
+- Add new interface ``EmbeddingCalculator``. This class is derived from 
+  the calculator class and allows for embedding calculations with different 
+  underlying calculators.
+ 
 Release 4.0.2
 -------------
 

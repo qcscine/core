@@ -96,7 +96,7 @@ class Module {
    *   to the desired interface interface.
    */
   virtual boost::any get(const std::string& /* interface */, const std::string& /* model */
-                         ) const = 0;
+  ) const = 0;
 
   /*!
    * @brief Checks if this module supplies a particular model of an interface.
@@ -109,7 +109,7 @@ class Module {
    * @endcode
    */
   virtual bool has(const std::string& /* interface */, const std::string& /* model */
-                   ) const noexcept = 0;
+  ) const noexcept = 0;
 
   /*!
    * @brief Announces all interfaces of which the module provides at least one model

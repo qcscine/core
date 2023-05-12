@@ -20,6 +20,10 @@ void ModuleManager::load(boost::dll::shared_library library) {
   _impl->load(std::move(library));
 }
 
+void ModuleManager::load(std::shared_ptr<Module> module) {
+  _impl->load(module);
+}
+
 std::vector<std::string> ModuleManager::getLoadedModuleNames() const {
   return _impl->getLoadedModuleNames();
 }

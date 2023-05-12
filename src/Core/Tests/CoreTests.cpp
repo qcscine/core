@@ -52,6 +52,39 @@ TEST(CoreModules, StringSplit) {
   ASSERT_EQ(Detail::split("a;b;c;d", ';'), expected);
 }
 
+class FakeModule : public Scine::Core::Module {
+ public:
+  std::string name() const noexcept final {
+    return "FakeModule";
+  }
+
+  boost::any get(const std::string& /* interface */, const std::string& /* model */) const final {
+    return NULL;
+  }
+
+  bool has(const std::string& /* interface */, const std::string& /* model */) const noexcept final {
+    return false;
+  }
+
+  std::vector<std::string> announceInterfaces() const noexcept final {
+    return {};
+  }
+
+  std::vector<std::string> announceModels(const std::string& /* interface */) const noexcept final {
+    return {};
+  }
+
+  static std::shared_ptr<Scine::Core::Module> make() {
+    return std::make_shared<FakeModule>();
+  }
+};
+
+TEST(CoreModules, DirectModuleLoad) {
+  auto& manager = ModuleManager::getInstance();
+  auto module = std::make_shared<FakeModule>();
+  manager.load(module);
+}
+
 TEST(ObjectWithLog, Basics) {
   struct Foo : public ObjectWithLog {};
 

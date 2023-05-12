@@ -27,7 +27,10 @@ namespace Core {
  * @class Calculator Calculator.h
  * @brief The interface for all classes running electronic structure calculations.
  */
-class Calculator : public StateHandableObject, public ObjectWithStructure, public ObjectWithLog {
+class Calculator : public StateHandableObject,
+                   public ObjectWithStructure,
+                   public ObjectWithLog,
+                   public std::enable_shared_from_this<Calculator> {
  public:
   static constexpr const char* interface = "calculator";
 
@@ -71,8 +74,8 @@ class Calculator : public StateHandableObject, public ObjectWithStructure, publi
    * if needed, implement a custom copy constructor. This reduces boilerplate
    * code.
    */
-  std::unique_ptr<Core::Calculator> clone() const {
-    return std::unique_ptr<Core::Calculator>(this->cloneImpl());
+  std::shared_ptr<Core::Calculator> clone() const {
+    return this->cloneImpl();
   }
   /**
    * @brief Accessor for the settings.
@@ -122,7 +125,7 @@ class Calculator : public StateHandableObject, public ObjectWithStructure, publi
    * Implementation of the clone() function, pure virtual private method.
    * It returns a pointer to allow for covariant return types in inheritance.
    */
-  virtual Core::Calculator* cloneImpl() const = 0;
+  virtual std::shared_ptr<Core::Calculator> cloneImpl() const = 0;
 };
 
 } /* namespace Core */

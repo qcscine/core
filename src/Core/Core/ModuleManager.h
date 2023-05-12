@@ -107,6 +107,8 @@ class CORE_EXPORT ModuleManager {
    */
   void load(boost::dll::shared_library library);
 
+  void load(std::shared_ptr<Module> module);
+
   /**
    * @brief Get a list of all loaded Modules.
    *

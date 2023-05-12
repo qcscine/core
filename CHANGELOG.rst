@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Release 5.0.0
+-------------
+
+- Allow for direct loading of modules
+
 Release 4.1.0
 -------------
 

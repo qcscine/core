@@ -1,7 +1,7 @@
 /**
  * @file Calculator.h
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 #ifndef CORE_EMBEDDINGCALCULATOR_H
@@ -40,7 +40,12 @@ class EmbeddingCalculator : public Calculator {
    * @brief Accessor for the underlying calculators.
    * @return std::vector<std::shared_ptr<Calculator>> A vector of underlying calculators.
    */
-  virtual std::vector<std::shared_ptr<Calculator>> getUnderlyingCalculators() = 0;
+  virtual std::vector<std::shared_ptr<Calculator>> getUnderlyingCalculators() const = 0;
+  /**
+   * @brief Passes the settings of the underlying calculators to the settings of the embedding calculator.
+   * @note In the derived class, care must be taken that the underlying calculators have been set before.
+   */
+  virtual void addUnderlyingSettings() = 0;
   /// @brief Default destructor.
   virtual ~EmbeddingCalculator() = default;
 

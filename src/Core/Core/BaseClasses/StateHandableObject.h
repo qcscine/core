@@ -1,7 +1,7 @@
 /**
  * @file StateHandableObject.h
  * @copyright This code is licensed under the 3-clause BSD license.\n
- *            Copyright ETH Zurich, Laboratory of Physical Chemistry, Reiher Group.\n
+ *            Copyright ETH Zurich, Department of Chemistry and Applied Biosciences, Reiher Group.\n
  *            See LICENSE.txt for details.
  */
 #ifndef CORE_STATEHANDABLEOBJECT_H_
@@ -57,7 +57,7 @@ class StateHandableObject {
    * @brief Get the current state of the object.
    *
    * Note that the state is possibly a mutable representation of the current state
-   * of the object.It is not necessarily a deepcopy, eventhough this is likely the
+   * of the object. It is not necessarily a deepcopy, eventhough this is likely the
    * default behaviour. Please read the documentation of the specific
    * implementation for further details.
    *

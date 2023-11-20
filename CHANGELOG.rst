@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Release 6.0.0
+-------------
+
+- Improve support for compilation on Windows (MSVC)
+- Update address in license
+
 Release 5.0.0
 -------------
 
@@ -9,10 +15,10 @@ Release 5.0.0
 Release 4.1.0
 -------------
 
-- Add new interface ``EmbeddingCalculator``. This class is derived from 
-  the calculator class and allows for embedding calculations with different 
+- Add new interface ``EmbeddingCalculator``. This class is derived from
+  the calculator class and allows for embedding calculations with different
   underlying calculators.
- 
+
 Release 4.0.2
 -------------
 

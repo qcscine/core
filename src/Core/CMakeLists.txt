@@ -25,6 +25,10 @@ target_link_libraries(Core
     ${CMAKE_DL_LIBS}
 )
 
+if(MSVC)
+  target_compile_definitions(Core PUBLIC BOOST_ALL_NO_LIB)
+endif()
+
 macro(determine_lib_type target)
   get_target_property(LIB_TYPE ${target} TYPE)
   if("${LIB_TYPE}" STREQUAL "UNKNOWN_LIBRARY")

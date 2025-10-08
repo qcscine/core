@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Release 6.0.2
+-------------
+
+- Apply formatting rules of clang 12
+
 Release 6.0.1
 -------------
 

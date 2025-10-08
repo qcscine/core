@@ -39,7 +39,7 @@ inline bool caseInsensitiveEqual(const std::string& a, const std::string& b) {
 template<bool done = true>
 struct exec_if_impl {
   template<typename Iter, typename LastIter, typename Pred, typename Exec>
-  static auto execute(Iter* /* i */, LastIter* /* l */, const Pred& /* p */, const Exec & /* e */) ->
+  static auto execute(Iter* /* i */, LastIter* /* l */, const Pred& /* p */, const Exec& /* e */) ->
       typename Exec::ResultType {
     return Exec::none();
   }
